@@ -1,9 +1,9 @@
-export const mintNFT = 
-`
+export const mintNFT = `
 // REPLACE THIS WITH YOUR CONTRACT NAME + ADDRESS
-import BottomShot from 0x7b6adb682517f137 
+import CrazyCats from 0x98cba20939aed408
 // This remains the same 
 import NonFungibleToken from 0x631e88ae7f1d7c20
+import MetadataViews from 0x631e88ae7f1d7c20
 
 transaction(
   recipient: Address,
@@ -12,40 +12,39 @@ transaction(
   thumbnail: String,
 ) {
   prepare(signer: AuthAccount) {
-    if signer.borrow<&BottomShot.Collection>(from: BottomShot.CollectionStoragePath) != nil {
-      return
+    // Check if the user sending the transaction has a collection
+    if signer.borrow<&CrazyCats.Collection>(from: CrazyCats.CollectionStoragePath) != nil {
+        // If they do, we move on to the execute stage
+        return
     }
 
-    // Create a new empty collection
-    let collection <- BottomShot.createEmptyCollection()
+    // If they don't, we create a new empty collection
+    let collection <- CrazyCats.createEmptyCollection()
 
-    // save it to the account
-    signer.save(<-collection, to: BottomShot.CollectionStoragePath)
+    // Save it to the account
+    signer.save(<-collection, to: CrazyCats.CollectionStoragePath)
 
-    // create a public capability for the collection
-    signer.link<&{NonFungibleToken.CollectionPublic}>(
-      BottomShot.CollectionPublicPath,
-      target: BottomShot.CollectionStoragePath
+    // Create a public capability for the collection
+    signer.link<&{NonFungibleToken.CollectionPublic, MetadataViews.ResolverCollection}>(
+        CrazyCats.CollectionPublicPath,
+        target: CrazyCats.CollectionStoragePath
     )
   }
 
-
   execute {
-    // Borrow the recipient's public NFT collection reference
     let receiver = getAccount(recipient)
-      .getCapability(BottomShot.CollectionPublicPath)
+      .getCapability(CrazyCats.CollectionPublicPath)
       .borrow<&{NonFungibleToken.CollectionPublic}>()
-      ?? panic("Could not get receiver reference to the NFT Collection")
+      ?? panic("Could not get receiver reference to the NFT Collection") 
 
-    // Mint the NFT and deposit it to the recipient's collection
-    BottomShot.mintNFT(
+    CrazyCats.mintNFT(
       recipient: receiver,
       name: name,
       description: description,
-      thumbnail: thumbnail,
+      thumbnail: thumbnail
     )
-    
+
     log("Minted an NFT and stored it into the collection")
-  } 
+  }
 }
-`
+`;
